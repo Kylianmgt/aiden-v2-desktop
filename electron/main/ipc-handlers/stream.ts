@@ -1,7 +1,7 @@
 // AIDEN v2 Desktop - Stream IPC Handlers
 
 import { BrowserWindow, ipcMain } from 'electron'
-import { v4 as uuidv4 } from 'crypto'
+import crypto from 'crypto'
 
 const activeStreams = new Map<string, AbortController>()
 

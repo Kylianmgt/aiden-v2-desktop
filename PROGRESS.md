@@ -1,72 +1,51 @@
 # AIDEN v2 Desktop - Progress
 
-## ✅ Completed
+## Status: ✅ Build & Tests Passing
 
-### A. Electron + Vite Scaffold
-- [x] Vite 6 + React 19 + TypeScript
-- [x] Electron main process entry
-- [x] Preload script with contextBridge
-- [x] Tailwind CSS 4 configured
-- [x] electron-builder config
-- [x] Dev mode (Vite dev server in Electron)
-- [x] Prod mode (built files)
+### Build Results (2026-02-20)
+- ✅ `tsc --noEmit` — 0 errors (renderer)
+- ✅ `tsc -p tsconfig.electron.json` — 0 errors (electron main)
+- ✅ `vite build` — successful (renderer bundle)
+- ✅ `npm run build` — full build passes
+- ✅ `npx prisma generate` — Prisma client generated
 
-### B. Transport Middleware
-- [x] Transport interface with adapters (db, events, stream, fs, auth)
-- [x] Local transport (Electron IPC → SQLite)
-- [x] Remote transport (HTTP → NestJS server)
-- [x] Hybrid mode support
-- [x] Transport factory with auto-detection
-- [x] Transport-aware fetch utility
-- [x] React context + hooks (TransportProvider, useTransport)
-- [x] Runtime mode switching
+### Test Results
+- ✅ `npm test` (vitest) — 8/8 tests passed
+  - Transport factory tests (mode detection, adapter creation)
+  - Remote transport HTTP tests (correct endpoints, methods, error handling)
+  - Type validation tests
+- ✅ `scripts/test-local-db.ts` — 6/6 passed
+  - SQLite DB creation, CRUD (project/epic/story), relations, cascade delete
+- ⏭️ `scripts/test-remote-connection.ts` — SKIPPED (NestJS server not running)
+- ⏭️ `scripts/test-transport.ts` — SKIPPED (NestJS server not running)
 
-### C. Local Database
-- [x] Prisma schema (SQLite, mirrors server's PostgreSQL schema)
-- [x] Auto-initialization on first run
-- [x] Local demo user creation
-- [x] All CRUD operations via IPC
+### Fixes Applied
+- Fixed `electron/main/ipc-handlers/stream.ts`: changed `import { v4 as uuidv4 } from 'crypto'` to `import crypto from 'crypto'` (was using wrong export)
 
-### D. IPC Handlers
-- [x] Database handler (all entities: projects, epics, stories, specs, etc.)
-- [x] Filesystem handler (read, write, readDir, exists, mkdir, remove, selectDir)
-- [x] Stream handler (start, cancel, events)
-- [x] Terminal handler (stubbed - spawn, write, resize, kill)
-- [x] Config handler (get, set)
-- [x] Shell handler (openExternal)
+### Architecture
+- **Transport Layer**: Abstraction over local (Electron IPC/SQLite) and remote (HTTP/NestJS) backends
+- **Local Mode**: Prisma + SQLite, runs standalone in Electron
+- **Remote Mode**: HTTP fetch to NestJS server API
+- **Hybrid Mode**: Can mix local and remote (planned)
+- **React Frontend**: Vite + React 19 + TailwindCSS v4 + TanStack Query
 
-### E. Preload Script
-- [x] electronAPI with all adapters
-- [x] Channel validation
-- [x] Event subscription (on, once)
-
-### F. React Side
-- [x] Entry point + App with providers
-- [x] TransportProvider + QueryClientProvider
-- [x] React Query hooks (projects, epics, stories)
-- [x] Test page with CRUD tests + raw JSON output
-
-### G. Testing
-- [x] Vitest configured
-- [x] Transport factory tests
-- [x] Remote transport HTTP tests
-- [x] Type validation tests
-
-### H. Dev Environment
-- [x] docker-compose.yaml (PostgreSQL)
-- [x] npm scripts (dev, build, test, package)
-- [x] .env.example
-- [x] README.md
-
-### I. Documentation
-- [x] docs/TRANSPORT.md
-- [x] docs/IPC.md
-- [x] docs/DEV.md
-- [x] PROGRESS.md
-
-## 🔲 Future Work
-- [ ] Socket.IO integration for real-time events in remote mode
-- [ ] node-pty for real terminal support
-- [ ] Auto-updater setup
-- [ ] E2E tests with Playwright
-- [ ] GitHub OAuth deep linking
+### Project Structure
+```
+src/                    # React renderer
+  lib/transport/        # Transport abstraction layer
+    types.ts            # All interfaces and data types
+    index.ts            # Transport factory
+    local-transport.ts  # Electron IPC transport
+    remote-transport.ts # HTTP transport
+    fetch.ts            # Transport-aware fetch utility
+    context.tsx         # React context provider
+  lib/queries/          # TanStack Query hooks
+  pages/test.tsx        # Transport test page
+electron/               # Electron main process
+  main/index.ts         # App entry, window creation
+  main/config.ts        # App configuration
+  main/services/        # Database service (Prisma/SQLite)
+  main/ipc-handlers/    # IPC handler registration
+prisma/schema.prisma    # SQLite schema (mirrors server PostgreSQL)
+scripts/                # Test scripts
+```

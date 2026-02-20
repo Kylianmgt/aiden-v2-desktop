@@ -2,24 +2,43 @@
 
 import { BrowserWindow, ipcMain } from 'electron'
 import crypto from 'crypto'
+import { aiService } from '../services/ai'
 
 const activeStreams = new Map<string, AbortController>()
 
 export function registerStreamHandlers(mainWindow: BrowserWindow): void {
-  ipcMain.handle('stream:start', async (_event, endpoint: string, data: unknown) => {
+  aiService.setMainWindow(mainWindow)
+
+  ipcMain.handle('stream:start', async (_event, endpoint: string, data: any) => {
     const streamId = crypto.randomUUID()
     const controller = new AbortController()
     activeStreams.set(streamId, controller)
 
-    // For local mode, stream handling would dispatch to local AI providers
-    // For now, emit a placeholder event
+    // Route to AI service for chat/generation endpoints
+    if (endpoint.includes('chat') || endpoint.includes('generate') || endpoint.includes('prd') || endpoint.includes('spec')) {
+      try {
+        const aiStreamId = await aiService.stream({
+          messages: data.messages || [{ role: 'user', content: data.prompt || data.content || '' }],
+          systemPrompt: data.systemPrompt,
+          model: data.model,
+          maxTokens: data.maxTokens,
+        })
+        // The AI service uses its own stream IDs but we map them
+        return aiStreamId
+      } catch (err: any) {
+        mainWindow.webContents.send('stream:error', { streamId, error: err.message })
+        return streamId
+      }
+    }
+
+    // Fallback: placeholder stream
     setTimeout(() => {
-      mainWindow?.webContents.send('stream:data', {
+      mainWindow.webContents.send('stream:data', {
         streamId,
         type: 'text',
         content: `[Stream ${streamId}] Started for ${endpoint}`,
       })
-      mainWindow?.webContents.send('stream:done', { streamId })
+      mainWindow.webContents.send('stream:done', { streamId })
       activeStreams.delete(streamId)
     }, 100)
 
@@ -32,5 +51,6 @@ export function registerStreamHandlers(mainWindow: BrowserWindow): void {
       controller.abort()
       activeStreams.delete(streamId)
     }
+    aiService.cancelStream(streamId)
   })
 }

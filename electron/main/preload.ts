@@ -30,6 +30,43 @@ export interface ElectronAPI {
     write: (sessionId: string, data: string) => Promise<boolean>
     resize: (sessionId: string, cols: number, rows: number) => Promise<boolean>
     kill: (sessionId: string) => Promise<boolean>
+    list: () => Promise<unknown[]>
+  }
+  agent: {
+    spawn: (options: unknown) => Promise<unknown>
+    pause: (sessionId: string) => Promise<boolean>
+    resume: (sessionId: string) => Promise<boolean>
+    cancel: (sessionId: string) => Promise<boolean>
+    list: () => Promise<unknown[]>
+    get: (sessionId: string) => Promise<unknown>
+  }
+  git: {
+    status: (workDir: string) => Promise<unknown>
+    init: (workDir: string) => Promise<void>
+    commit: (workDir: string, message: string) => Promise<string>
+    diff: (workDir: string, options?: { staged?: boolean }) => Promise<string>
+    log: (workDir: string, limit?: number) => Promise<unknown[]>
+    branch: (workDir: string) => Promise<unknown>
+    checkout: (workDir: string, branch: string, create?: boolean) => Promise<void>
+    push: (workDir: string, remote?: string, branch?: string) => Promise<void>
+    pull: (workDir: string, remote?: string, branch?: string) => Promise<void>
+    add: (workDir: string, files: string[]) => Promise<void>
+  }
+  ai: {
+    chat: (params: unknown) => Promise<string>
+    stream: (params: unknown) => Promise<string>
+    cancel: (streamId: string) => Promise<void>
+  }
+  github: {
+    authenticate: (token: string) => Promise<boolean>
+    user: () => Promise<unknown>
+    repos: () => Promise<unknown[]>
+    branches: (owner: string, repo: string) => Promise<string[]>
+    clone: (owner: string, repo: string, path: string, branch?: string) => Promise<void>
+  }
+  settings: {
+    get: (userId: string) => Promise<unknown>
+    update: (userId: string, data: Record<string, unknown>) => Promise<unknown>
   }
   on: (channel: string, callback: (...args: unknown[]) => void) => () => void
   once: (channel: string, callback: (...args: unknown[]) => void) => void
@@ -88,6 +125,43 @@ const electronAPI: ElectronAPI = {
     write: (sid, data) => invoke('terminal:write', sid, data),
     resize: (sid, c, r) => invoke('terminal:resize', sid, c, r),
     kill: (sid) => invoke('terminal:kill', sid),
+    list: () => invoke('terminal:list'),
+  },
+  agent: {
+    spawn: (options) => invoke('agent:spawn', options),
+    pause: (sid) => invoke('agent:pause', sid),
+    resume: (sid) => invoke('agent:resume', sid),
+    cancel: (sid) => invoke('agent:cancel', sid),
+    list: () => invoke('agent:list'),
+    get: (sid) => invoke('agent:get', sid),
+  },
+  git: {
+    status: (w) => invoke('git:status', w),
+    init: (w) => invoke('git:init', w),
+    commit: (w, m) => invoke('git:commit', w, m),
+    diff: (w, o) => invoke('git:diff', w, o),
+    log: (w, l) => invoke('git:log', w, l),
+    branch: (w) => invoke('git:branch', w),
+    checkout: (w, b, c) => invoke('git:checkout', w, b, c),
+    push: (w, r, b) => invoke('git:push', w, r, b),
+    pull: (w, r, b) => invoke('git:pull', w, r, b),
+    add: (w, f) => invoke('git:add', w, f),
+  },
+  ai: {
+    chat: (p) => invoke('ai:chat', p),
+    stream: (p) => invoke('ai:stream', p),
+    cancel: (sid) => invoke('ai:cancel', sid),
+  },
+  github: {
+    authenticate: (token) => invoke('github:authenticate', token),
+    user: () => invoke('github:user'),
+    repos: () => invoke('github:repos'),
+    branches: (o, r) => invoke('github:branches', o, r),
+    clone: (o, r, p, b) => invoke('github:clone', o, r, p, b),
+  },
+  settings: {
+    get: (userId) => invoke('settings:get', userId),
+    update: (userId, data) => invoke('settings:update', userId, data),
   },
   on: (channel, callback) => {
     if (!isValidChannel(channel)) {

@@ -251,3 +251,62 @@ model Activity {
   @@index([projectId])
   @@index([storyId])
 }
+
+// Project Memory
+model ProjectMemory {
+  id             String    @id @default(cuid())
+  projectId      String
+  type           String
+  category       String
+  title          String
+  content        String
+  metadata       String    @default("{}")
+  sourceAgentId  String?
+  sourceStoryId  String?
+  confidence     Float     @default(0.8)
+  useCount       Int       @default(0)
+  successRate    Float?
+  status         String    @default("active")
+  expiresAt      DateTime?
+  createdAt      DateTime  @default(now())
+  updatedAt      DateTime  @updatedAt
+
+  usages MemoryUsage[]
+
+  @@index([projectId])
+  @@index([type])
+  @@index([category])
+  @@index([status])
+}
+
+// Memory Usage Tracking
+model MemoryUsage {
+  id             String   @id @default(cuid())
+  memoryId       String
+  agentSessionId String
+  storyId        String?
+  wasHelpful     Boolean?
+  outcome        String   @default("unknown")
+  notes          String?
+  createdAt      DateTime @default(now())
+
+  memory ProjectMemory @relation(fields: [memoryId], references: [id], onDelete: Cascade)
+
+  @@index([memoryId])
+  @@index([agentSessionId])
+}
+
+// Prompt Templates
+model PromptTemplate {
+  id          String   @id @default(cuid())
+  name        String
+  description String?
+  category    String
+  content     String
+  variables   String   @default("[]")
+  isSystem    Boolean  @default(false)
+  createdAt   DateTime @default(now())
+  updatedAt   DateTime @updatedAt
+
+  @@index([category])
+}
